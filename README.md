@@ -1,5 +1,4 @@
 # replayTweetStream
----
 
 Given a gzipped file of tweets, replay them as though you were streaming them from Twitter's data stream.
 
@@ -11,6 +10,6 @@ The code was recently updated to support configurable senders. Simply implement 
 I've also tested this streaming capability with Spark Streaming over a socket and achieved good results.
 
 ## Todo Items
----
+
 - Add support for multiple files
 - Add support for streaming files from HDFS
