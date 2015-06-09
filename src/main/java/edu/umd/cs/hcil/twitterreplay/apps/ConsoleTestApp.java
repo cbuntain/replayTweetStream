@@ -1,5 +1,10 @@
-package edu.umd.cs.hcil.twitterreplay;
+package edu.umd.cs.hcil.twitterreplay.apps;
 
+import edu.umd.cs.hcil.twitterreplay.DateParser;
+import edu.umd.cs.hcil.twitterreplay.GzippedFileReader;
+import edu.umd.cs.hcil.twitterreplay.ProducerTask;
+import edu.umd.cs.hcil.twitterreplay.senders.ConsoleSender;
+import edu.umd.cs.hcil.twitterreplay.senders.Sender;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -11,10 +16,10 @@ import java.util.logging.Logger;
  * Hello world!
  *
  */
-public class App 
+public class ConsoleTestApp 
 {
     private static final Logger LOGGER = 
-            Logger.getLogger(App.class.getName());
+            Logger.getLogger(ConsoleTestApp.class.getName());
     
     private static Date getFirstTime(GzippedFileReader reader) {
         Date firstTime = null;
@@ -45,14 +50,16 @@ public class App
         String filename = args[0];
         System.out.println("Reading File: " + filename);
         
+        createProducer(filename, new ConsoleSender());
+    }
+    
+    public static void createProducer(String filename, Sender s) {
         GzippedFileReader reader = new GzippedFileReader(filename);
         Date firstTime = getFirstTime(reader);
         
-        System.out.println(firstTime);
-        
-        ProducerTask task = new ProducerTask(firstTime, 1, Calendar.SECOND, reader);
+        ProducerTask task = new ProducerTask(firstTime, 1, Calendar.SECOND, reader, s);
         
         ScheduledThreadPoolExecutor scheduler = new ScheduledThreadPoolExecutor(4);
-        scheduler.scheduleAtFixedRate(task, 1, 1, TimeUnit.SECONDS);
+        scheduler.scheduleAtFixedRate(task, 1, 1, TimeUnit.SECONDS);        
     }
 }

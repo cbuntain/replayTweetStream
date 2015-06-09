@@ -6,6 +6,7 @@
 
 package edu.umd.cs.hcil.twitterreplay;
 
+import edu.umd.cs.hcil.twitterreplay.senders.Sender;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -30,13 +31,14 @@ public class ProducerTask implements Runnable {
     private Date mNextTime;
     private Pair<Date, String> mNextItem;
     
+    private final Sender mOutput;
     private final GzippedFileReader mInputReader;
     private final DateFormat mDateFormat;
     private final Calendar mCalendar;
     private final int mInterval;
     private final int mIntervalUnit;
     
-    public ProducerTask(Date firstTime, int interval, int unit, GzippedFileReader input) {
+    public ProducerTask(Date firstTime, int interval, int unit, GzippedFileReader input, Sender output) {
         
         mInterval = interval;
         mIntervalUnit = unit;
@@ -52,6 +54,7 @@ public class ProducerTask implements Runnable {
         mNextItem = null;
         
         mInputReader = input;
+        mOutput = output;
     }
 
     public void run() {
@@ -77,12 +80,12 @@ public class ProducerTask implements Runnable {
                             System.err.println("Out of order tweet:");
                             System.err.println(tweetJson);
                             
-                            continue;
+//                            continue;
 //                            throw new Error("Encountered Out-of-Order Tweet: " + tweetJson);
                         }
 
                         // Is this tweet the same as or AFTER the current time?
-                        if ( tweetTime.compareTo(mCurrentTime) == 0 ) {
+                        if ( tweetTime.compareTo(mCurrentTime) <= 0 ) {
                             messages.add(tweetJson);
                         } else {
                             mNextItem = new ImmutablePair<Date, String>(tweetTime, tweetJson);
@@ -101,13 +104,10 @@ public class ProducerTask implements Runnable {
                 LOGGER.log(Level.INFO, "No messages during time: {0}", mDateFormat.format(mCurrentTime));
             }
 
-            // Publish the messages for this interval to Kafka
-            System.out.println("Message Count: " + messages.size());
-    //        for ( String msg : messages ) {
-    //            System.out.println(msg);
-    //        }
+            // Publish the messages for this interval to the sender
+            mOutput.send(messages);
         } catch ( Exception e ) {
-            LOGGER.log(Level.SEVERE, "Unknown Exception: {0}", e);
+            LOGGER.log(Level.SEVERE, "Unknown Exception: {0}", e.getMessage());
         }
         
         mCurrentTime = mNextTime;
